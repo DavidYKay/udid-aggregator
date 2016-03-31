@@ -1,12 +1,11 @@
 (ns udid-aggregator.core
   (:require [clojure.java.jdbc :as sql]))
 
+;; TODO: Pull this from the environment
 (def max-bucket-size 5)
 
-(def db {:subprotocol "postgresql"
-         :subname "//127.0.0.1:5432/korma"
-         :user "dk"
-         :password "secret"})
+(def db (or (System/getenv "DATABASE_URL")
+            "postgresql://localhost:5432/korma"))
 
 (defn- uuid []
   (str (java.util.UUID/randomUUID)))
@@ -18,6 +17,7 @@
              ["select * from buckets"]))
 
 (defn- current-bucket
+  "Returns nil if there is no current bucket with capacity"
   []
   (first (sql/query db
                     ["select * from buckets where counter < ?" max-bucket-size])))
