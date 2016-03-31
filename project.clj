@@ -22,6 +22,6 @@
                                   [ring/ring-mock "0.3.0"]]
                    :plugins [[lein-midje "3.2"]
                              [lein-ring "0.9.7"]]}}
-  
+  :ring {:handler udid-aggregator.handler/app}
   :plugins [[lein-environ "1.0.0"]]
   :uberjar-name "udid-aggregator.jar")
