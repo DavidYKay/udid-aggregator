@@ -1,7 +1,7 @@
 (ns udid-aggregator.handler
   (:require [compojure.api.sweet :refer [GET POST defapi]]
-            [uuid-aggregator.core :refer [current-bucket-id]]
-            [ring.util.http-response :refer [ok]]))
+            [ring.util.http-response :refer [ok]]
+            [udid-aggregator.core :refer [current-bucket-id]]))
 
 (defapi app
   (POST "/create-id" []
