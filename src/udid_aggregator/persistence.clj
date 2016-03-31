@@ -1,1 +1,0 @@
-(ns udid-aggregator.persistence)
