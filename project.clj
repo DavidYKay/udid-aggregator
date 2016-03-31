@@ -7,7 +7,7 @@
                  [ring "1.3.1"]
                  [metosin/compojure-api "1.0.2"]
                  [environ "1.0.0"]
-                 [org.clojure/java.jdbc "0.3.7"]
+                 [org.clojure/java.jdbc "0.5.0"]
                  ;; Example for postgres:
                  ;[org.postgresql/postgresql "9.2-1002-jdbc4"]
                  ;[org.postgresql/postgresql "9.4.1208.jre7"]
