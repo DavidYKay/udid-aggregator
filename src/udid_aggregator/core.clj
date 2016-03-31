@@ -1,20 +1,44 @@
 (ns udid-aggregator.core
-  (:require [compojure.api.sweet :refer [GET defapi]]
-            [ring.util.http-response :refer [ok]]
-            [taoensso.carmine :as car :refer (wcar)]))
+  (:require [clojure.java.jdbc :as sql]))
 
-(def server1-conn {:pool {}
-                   :spec {:host "127.0.0.1"
-                          :port 6379}})
-(defmacro wcar* [& body] `(car/wcar server1-conn ~@body))
+(def max-bucket-size 5)
 
-(defn hello-redis []
-  (wcar* (car/ping)
-         (car/set "foo" "bar")
-         (car/get "foo")))
+(def db {:subprotocol "postgresql"
+         :subname "//127.0.0.1:5432/korma"
+         :user "dk"
+         :password "secret"})
 
-(defapi app
-  (GET "/hello" []
-    :query-params [name :- String]
-    (ok {:message (str "Hello, " name)})))
+(defentity buckets)
 
+(defn- uuid []
+  (str (java.util.UUID/randomUUID)))
+
+(defn- current-bucket []
+  (sql/query db
+             ["select * from buckets where count < ?" max-bucket-size]
+             :row-fn :uuid))
+
+(defn- create-bucket []
+  (sql/insert! db :buckets
+               {:uuid (uuid)
+                :counter 0}))
+
+(defn- increment-bucket [{guid :id}]
+  (sql/update! db :buckets
+               {:counter inc}
+               ["zip = ?" 94546]))
+
+(defn- init-postgres
+  "on first run"
+  []
+  (sql/db-do-commands db
+                      (sql/create-table-ddl :buckets
+                                            [:uuid :text] 
+                                            [:count :smallint])))
+
+(defn current-bucket-id []
+  (let [{cur-count :count cur-id :id :as current} (current-bucket)
+        bucket (if (>= cur-count max-bucket-size)
+                 (create-bucket)
+                 (increment-bucket current))]
+    (:id bucket)))
