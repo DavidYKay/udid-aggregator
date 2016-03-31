@@ -8,15 +8,19 @@
          :user "dk"
          :password "secret"})
 
-(defentity buckets)
-
 (defn- uuid []
   (str (java.util.UUID/randomUUID)))
 
-(defn- current-bucket []
+(defn- all-buckets
+  "For debug only"
+  []
   (sql/query db
-             ["select * from buckets where count < ?" max-bucket-size]
-             :row-fn :uuid))
+             ["select * from buckets"]))
+
+(defn- current-bucket
+  []
+  (first (sql/query db
+                    ["select * from buckets where counter < ?" max-bucket-size])))
 
 (defn- create-bucket []
   (sql/insert! db :buckets
@@ -33,12 +37,18 @@
   []
   (sql/db-do-commands db
                       (sql/create-table-ddl :buckets
+                                            [:id :serial "PRIMARY KEY"]
                                             [:uuid :text] 
-                                            [:count :smallint])))
+                                            [:counter :smallint]))
+  (create-bucket))
+
+(defn- drop-table []
+  (sql/db-do-commands db
+                      (sql/drop-table-ddl :buckets)))
 
 (defn current-bucket-id []
-  (let [{cur-count :count cur-id :id :as current} (current-bucket)
+  (let [{cur-count :counter :as current} (current-bucket)
         bucket (if (>= cur-count max-bucket-size)
                  (create-bucket)
                  (increment-bucket current))]
-    (:id bucket)))
+    (:uuid bucket)))
