@@ -1,8 +1,8 @@
 (ns udid-aggregator.core
   (:require [clojure.java.jdbc :as sql]))
 
-;; TODO: Pull this from the environment
-(def max-bucket-size 5)
+(def max-bucket-size (or (System/getenv "BUCKET_SIZE")
+                         5))
 
 (def db (or (System/getenv "DATABASE_URL")
             "postgresql://localhost:5432/korma"))
