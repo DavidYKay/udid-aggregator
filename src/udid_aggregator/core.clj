@@ -22,15 +22,14 @@
   (first (sql/query db
                     ["select * from buckets where counter < ?" max-bucket-size])))
 
-(defn- create-bucket []
-  (sql/insert! db :buckets
-               {:uuid (uuid)
-                :counter 0}))
+(defn- create-bucket [n]
+  (first (sql/insert! db :buckets
+                      {:uuid (uuid)
+                       :counter n})))
 
-(defn- increment-bucket [{guid :id}]
-  (sql/update! db :buckets
-               {:counter inc}
-               ["zip = ?" 94546]))
+(defn- increment-bucket [{uuid :uuid}]
+  (sql/execute! db
+               ["UPDATE buckets SET counter = counter + 1 WHERE uuid = ?" uuid]))
 
 (defn- init-postgres
   "on first run"
@@ -40,15 +39,16 @@
                                             [:id :serial "PRIMARY KEY"]
                                             [:uuid :text] 
                                             [:counter :smallint]))
-  (create-bucket))
+  (create-bucket 0))
 
 (defn- drop-table []
   (sql/db-do-commands db
                       (sql/drop-table-ddl :buckets)))
 
 (defn current-bucket-id []
-  (let [{cur-count :counter :as current} (current-bucket)
-        bucket (if (>= cur-count max-bucket-size)
-                 (create-bucket)
-                 (increment-bucket current))]
-    (:uuid bucket)))
+  (let [{:keys [uuid] :as current} (current-bucket)]
+    (if (nil? current)
+      (:uuid (create-bucket 1))
+      (do
+        (increment-bucket current)
+        uuid))))
